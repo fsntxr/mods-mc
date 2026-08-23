@@ -1,0 +1,22 @@
+(), getHeight(), 1.0f, Window.SECONDARY_OUTLINE);
++            renderer.drawRect(x, y, 4, getHeight(), Window.ACCENT);
+         }
+     }
+ 
+@@ -78,7 +89,6 @@
+                 opened = !opened;
+ 
+                 contentPane.updateLayout();
+-
+                 updateBounds();
+                 return true;
+             }
+@@ -98,7 +108,7 @@
+     }
+ 
+     private void updateBounds() {
+-        setWidth(Math.max(Math.max(renderer.getStringWidth(getTitle()), contentPane.getHeight()), preferredWidth));
++        setWidth(Math.max(renderer.getStringWidth(getTitle()) + 44, preferredWidth));
+         setHeight(Math.max(renderer.getStringHeight(getTitle()) * 5 / 4, preferredHeight) + (opened ? contentPane.getHeight() : 0));
+     }
+ 
