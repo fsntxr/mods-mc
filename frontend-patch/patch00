@@ -1,0 +1,358 @@
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/me/viniciusroger/ihatehg/clickgui/ClickGUI.java ihatehg_build/ihatehg-1.6/src/main/java/me/viniciusroger/ihatehg/clickgui/ClickGUI.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/me/viniciusroger/ihatehg/clickgui/ClickGUI.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/me/viniciusroger/ihatehg/clickgui/ClickGUI.java	2026-08-23 14:20:13.000000000 +0000
+@@ -23,20 +23,20 @@
+ import java.util.ArrayList;
+ 
+ public class ClickGUI extends GuiScreen {
+-    private final Window guiWindow = new Window("I Hate HG", 30, 30, 900, 500);
++    private final Window guiWindow = new Window("I Hate HG", 30, 30, 920, 540);
+     private final IRenderer windowRenderer = new ClientBaseRendererImpl();
+     private final ArrayList<ActionEventListener> renderListeners = new ArrayList<>();
++    private boolean centered;
+ 
+     @SuppressWarnings("unchecked")
+     public ClickGUI() {
+-        Pane contentPane = new ScrollPane(windowRenderer, new GridLayout(1));
++        Pane contentPane = new ScrollPane(windowRenderer, new GridLayout(1, 12, 10));
+ 
+         ArrayList<Spoiler> modulesSpoiler = new ArrayList<>();
+ 
+         IHateHG.getModuleManager().getModules().forEach(module -> {
+-            Pane modulePane = new Pane(windowRenderer, new GridLayout(1));
+-
+-            Pane configPane = new Pane(windowRenderer, new GridLayout(2));
++            Pane modulePane = new Pane(windowRenderer, new GridLayout(1, 12, 10));
++            Pane configPane = new Pane(windowRenderer, new GridLayout(2, 14, 9));
+ 
+             configPane.addComponent(new Label(windowRenderer, "Enabled"));
+ 
+@@ -44,12 +44,10 @@
+ 
+             enabledCheckbox.setListener(toggled -> {
+                 module.setEnabled(toggled);
+-
+                 return true;
+             });
+ 
+             renderListeners.add(() -> enabledCheckbox.setSelected(module.isEnabled()));
+-
+             configPane.addComponent(enabledCheckbox);
+ 
+             configPane.addComponent(new Label(windowRenderer, "Module Keybind"));
+@@ -62,20 +60,17 @@
+                         return false;
+                     case Keyboard.KEY_BACK:
+                         module.setKeybind(Keyboard.KEY_NONE);
+-
+                         return true;
+                 }
+ 
+                 module.setKeybind(key);
+-
+                 return true;
+             });
+ 
+             renderListeners.add(() -> moduleKeybind.setValue(module.getKeybind()));
+-
+             configPane.addComponent(moduleKeybind);
+ 
+-            Pane settingsPane = new Pane(windowRenderer, new GridLayout(2));
++            Pane settingsPane = new Pane(windowRenderer, new GridLayout(2, 14, 9));
+ 
+             if (!module.getSettings().isEmpty()) {
+                 module.getSettings().forEach(setting -> {
+@@ -87,12 +82,10 @@
+ 
+                         settingCheckBox.setListener(checked -> {
+                             booleanSetting.setValue(checked);
+-
+                             return true;
+                         });
+ 
+                         renderListeners.add(() -> settingCheckBox.setSelected(booleanSetting.getValue()));
+-
+                         settingsPane.addComponent(settingCheckBox);
+                     } else if (setting instanceof NumberSetting) {
+                         NumberSetting<Number> numberSetting = (NumberSetting<Number>) setting;
+@@ -108,12 +101,10 @@
+ 
+                         settingSlider.setListener(value -> {
+                             numberSetting.setValue(value);
+-
+                             return true;
+                         });
+ 
+                         renderListeners.add(() -> settingSlider.setValue(numberSetting.getValue().doubleValue()));
+-
+                         settingsPane.addComponent(settingSlider);
+                     } else if (setting instanceof ListSetting) {
+                         ListSetting listSetting = (ListSetting) setting;
+@@ -121,12 +112,10 @@
+ 
+                         settingComboBox.setListener(index -> {
+                             listSetting.setValue(listSetting.getValues()[index]);
+-
+                             return true;
+                         });
+ 
+                         renderListeners.add(() -> settingComboBox.setSelectedIndex(listSetting.getIndex()));
+-
+                         settingsPane.addComponent(settingComboBox);
+                     } else if (setting instanceof KeybindSetting) {
+                         KeybindSetting keybindSetting = (KeybindSetting) setting;
+@@ -138,17 +127,14 @@
+                                     return false;
+                                 case Keyboard.KEY_BACK:
+                                     keybindSetting.setValue(Keyboard.KEY_NONE);
+-
+                                     return true;
+                             }
+ 
+                             keybindSetting.setValue(key);
+-
+                             return true;
+                         });
+ 
+                         renderListeners.add(() -> keybindButtonSetting.setValue(keybindSetting.getValue()));
+-
+                         settingsPane.addComponent(keybindButtonSetting);
+                     }
+                 });
+@@ -160,24 +146,37 @@
+                 modulePane.addComponent(settingsPane);
+             }
+ 
+-            Spoiler moduleSpoiler = new Spoiler(windowRenderer, module.getName(), guiWindow.getWidth() - 15, modulePane);
+-
++            Spoiler moduleSpoiler = new Spoiler(windowRenderer, module.getName(), guiWindow.getWidth() - 24, modulePane);
+             modulesSpoiler.add(moduleSpoiler);
+         });
+ 
+         modulesSpoiler.forEach(contentPane::addComponent);
+-
+         guiWindow.setContentPane(contentPane);
+     }
+ 
+     @Override
++    public void initGui() {
++        super.initGui();
++        centerWindow();
++    }
++
++    private void centerWindow() {
++        guiWindow.setX(width - guiWindow.getWidth() / 2);
++        guiWindow.setY(height - guiWindow.getHeight() / 2);
++        centered = true;
++    }
++
++    @Override
+     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
++        if (!centered) centerWindow();
++
++        drawGradientRect(0, 0, width, height, 0xD9080A10, 0xE10E1020);
++
+         for (ActionEventListener actionEventListener : renderListeners) {
+             actionEventListener.onActionEvent();
+         }
+ 
+         Point point = Utils.calculateMouseLocation();
+-
+         guiWindow.mouseMoved(point.x * 2, point.y * 2);
+ 
+         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+@@ -201,21 +200,18 @@
+     @Override
+     protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+         guiWindow.mouseMoved(mouseX * 2, mouseY * 2);
+-
+         super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+     }
+ 
+     @Override
+     public void handleMouseInput() throws IOException {
+         super.handleMouseInput();
+-
+         guiWindow.mouseWheel(Mouse.getEventDWheel());
+     }
+ 
+     @Override
+     protected void keyTyped(char typedChar, int keyCode) throws IOException {
+         guiWindow.keyPressed(keyCode, typedChar);
+-
+         super.keyTyped(typedChar, keyCode);
+     }
+-}
+\ No newline at end of file
++}
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/ClientBaseRendererImpl.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/ClientBaseRendererImpl.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/ClientBaseRendererImpl.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/ClientBaseRendererImpl.java	2026-08-23 14:20:13.000000000 +0000
+@@ -59,9 +59,9 @@
+         setColor(color);
+ 
+         worldrenderer.begin(GL_TRIANGLES, DefaultVertexFormats.POSITION);
+-        worldrenderer.pos(x1, y1, 0.0D).endVertex();
+-        worldrenderer.pos(x2, y2, 0.0D).endVertex();
+-        worldrenderer.pos(x3, y3, 0.0D).endVertex();
++        worldrenderer.pos(x1 / 2.0, y1 / 2.0, 0.0D).endVertex();
++        worldrenderer.pos(x2 / 2.0, y2 / 2.0, 0.0D).endVertex();
++        worldrenderer.pos(x3 / 2.0, y3 / 2.0, 0.0D).endVertex();
+ 
+         tessellator.draw();
+ 
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/Window.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/Window.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/Window.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/Window.java	2026-08-23 14:20:12.000000000 +0000
+@@ -10,20 +10,22 @@
+ 
+ package net.superblaubeere27.gui;
+ 
+-
+ import net.superblaubeere27.gui.components.Pane;
+-import org.lwjgl.opengl.GL11;
+ 
+ import java.awt.*;
+ 
+ public class Window {
+-    /* Color constants */
+-
+-    public static final Color SECONDARY_FOREGROUND = new Color(80, 80, 80, 240);
+-    public static final Color TERTIARY_FOREGROUND = new Color(20, 20, 20, 150);
+-    public static final Color SECONDARY_OUTLINE = new Color(10, 10, 10, 255);
+-    public static final Color BACKGROUND = new Color(20, 20, 20, 220);
+-    public static final Color FOREGROUND = Color.white;
++    public static final Color ACCENT = new Color(114, 98, 255, 255);
++    public static final Color ACCENT_HOVER = new Color(139, 126, 255, 255);
++    public static final Color ACCENT_SOFT = new Color(114, 98, 255, 55);
++
++    public static final Color SECONDARY_FOREGROUND = new Color(38, 42, 57, 245);
++    public static final Color TERTIARY_FOREGROUND = new Color(25, 28, 39, 235);
++    public static final Color SECONDARY_OUTLINE = new Color(58, 63, 82, 255);
++    public static final Color BACKGROUND = new Color(16, 18, 26, 248);
++    public static final Color FOREGROUND = new Color(244, 245, 250, 255);
++    public static final Color MUTED_FOREGROUND = new Color(165, 171, 191, 255);
++    public static final Color SHADOW = new Color(0, 0, 0, 90);
+ 
+     private String title;
+     private int x;
+@@ -49,14 +51,28 @@
+ 
+     public void render(IRenderer renderer) {
+         int fontHeight = renderer.getStringHeight(title);
+-        int headerFontOffset = fontHeight / 4;
++        int headerFontOffset = fontHeight / 3;
+ 
+-        headerHeight = headerFontOffset * 2 + fontHeight;
++        headerHeight = fontHeight + 22;
+ 
++        renderer.drawRect(x + 8, y + 10, width, height, SHADOW);
+         renderer.drawRect(x, y, width, height, BACKGROUND);
+-        renderer.drawRect(x, y, width, headerHeight, SECONDARY_FOREGROUND);
++        renderer.drawOutline(x, y, width, height, 1.0f, SECONDARY_OUTLINE);
+ 
+-        renderer.drawString(x + width / 2 - renderer.getStringWidth(title) / 2, y + headerFontOffset, title, FOREGROUND);
++        renderer.drawRect(x, y, width, headerHeight, new Color(23, 26, 37, 255));
++        renderer.drawRect(x, y + headerHeight - 2, width, 2, ACCENT);
++        renderer.drawRect(x + 18, y + 16, 5, fontHeight - 2, ACCENT);
++
++        renderer.drawString(x + 34, y + headerFontOffset + 6, title, FOREGROUND);
++
++        String badge = "CLIENT";
++        int badgeWidth = renderer.getStringWidth(badge) + 18;
++        int badgeHeight = fontHeight + 6;
++        int badgeX = x + width - badgeWidth - 18;
++        int badgeY = y + (headerHeight - badgeHeight) / 2;
++        renderer.drawRect(badgeX, badgeY, badgeWidth, badgeHeight, ACCENT_SOFT);
++        renderer.drawOutline(badgeX, badgeY, badgeWidth, badgeHeight, 1.0f, ACCENT);
++        renderer.drawString(badgeX + 9, badgeY + 3, badge, ACCENT_HOVER);
+ 
+         if (contentPane != null) {
+             if (contentPane.isSizeChanged()) {
+@@ -72,7 +88,6 @@
+         }
+     }
+ 
+-
+     public void mousePressed(int button, int x, int y) {
+         if (this.contentPane != null) contentPane.mousePressed(button, x, y, false);
+ 
+@@ -82,8 +97,6 @@
+ 
+                 dragX = this.x - x;
+                 dragY = this.y - y;
+-
+-//                drag(x, y);
+             }
+         }
+     }
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Button.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Button.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Button.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Button.java	2026-08-23 14:20:12.000000000 +0000
+@@ -16,7 +16,7 @@
+ 
+ public class Button extends AbstractComponent {
+     private static final int PREFERRED_WIDTH = 180;
+-    private static final int PREFERRED_HEIGHT = 22;
++    private static final int PREFERRED_HEIGHT = 26;
+ 
+     private String title;
+     private int preferredWidth;
+@@ -40,9 +40,10 @@
+     @Override
+     public void render() {
+         renderer.drawRect(x, y, getWidth(), getHeight(), hovered ? Window.SECONDARY_FOREGROUND : Window.TERTIARY_FOREGROUND);
+-        renderer.drawOutline(x, y, getWidth(), getHeight(), 1.0f, hovered ? Window.SECONDARY_OUTLINE : Window.SECONDARY_FOREGROUND);
++        renderer.drawRect(x, y, 3, getHeight(), hovered ? Window.ACCENT_HOVER : Window.SECONDARY_OUTLINE);
++        renderer.drawOutline(x, y, getWidth(), getHeight(), 1.0f, hovered ? Window.ACCENT : Window.SECONDARY_OUTLINE);
+ 
+-        renderer.drawString(x + getWidth() / 2 - renderer.getStringWidth(title) / 2, y + renderer.getStringHeight(title) / 4, title, Window.FOREGROUND);
++        renderer.drawString(x + getWidth() / 2 - renderer.getStringWidth(title) / 2, y + renderer.getStringHeight(title) / 4 + 1, title, hovered ? Window.FOREGROUND : Window.MUTED_FOREGROUND);
+     }
+ 
+     @Override
+@@ -78,8 +79,8 @@
+     public void setTitle(String title) {
+         this.title = title;
+ 
+-        setWidth(Math.max(renderer.getStringWidth(title), preferredWidth));
+-        setHeight(Math.max(renderer.getStringHeight(title) * 5 / 4, preferredHeight));
++        setWidth(Math.max(renderer.getStringWidth(title) + 20, preferredWidth));
++        setHeight(Math.max(renderer.getStringHeight(title) * 5 / 4 + 4, preferredHeight));
+     }
+ 
+     public ActionEventListener getOnClickListener() {
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/CheckBox.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/CheckBox.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/CheckBox.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/CheckBox.java	2026-08-23 14:20:12.000000000 +0000
+@@ -14,10 +14,8 @@
+ import net.superblaubeere27.gui.IRenderer;
+ import net.superblaubeere27.gui.Window;
+ 
+-import java.awt.*;
+-
+ public class CheckBox extends AbstractComponent {
+-    private static final int PREFERRED_HEIGHT = 22;
++    private static final int PREFERRED_HEIGHT = 24;
+ 
+     private boolean selected;
+     private String title;
+@@ -39,17 +37,22 @@
+ 
+     @Override
+     public void render() {
+-        renderer.drawRect(x, y, preferredHeight, preferredHeight, hovered ? Window.SECONDARY_FOREGROUND : Window.TERTIARY_FOREGROUND);
++        int boxSize = preferredHeight - 4;
++        int boxY = y + 2;
+ 
+-        if (selected) {
+-            Color color = hovered ? Window.TERTIARY_FOREGROUND : Window.SECONDARY_FOREGROUND;
++        renderer.drawRect(x, boxY, boxSize, boxSize, selected ? Window.ACCENT : Window.TERTIARY_FOREGROUND);
++        renderer.drawOutline(x, boxY, boxSize, boxSize, 1.0f, hovered ? Window.ACCENT_HOVER : (selected ? Window.ACCENT : Window.SECONDARY_OUTLINE));
+ 
+-            renderer.drawRect(x + 2, y + 3, preferredHeight - 5, preferredHeight - 5, new Color(color.getRed(), color.getGreen(), color.getBlue()));
++        if (selected) {
++            int inner = boxSize - 10;
++            renderer.drawRect(x + 5, boxY + 5, inner, inner, Window.FOREGROUND);
++        } else if (hovered) {
++            renderer.drawRect(x 
