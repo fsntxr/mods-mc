@@ -1,0 +1,47 @@
+name: Build ihatehg 1.6
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build.yml'
+      - 'frontend-patch/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout build files
+        uses: actions/checkout@v4
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Clone original 1.6 and apply frontend patch
+        shell: bash
+        run: |
+          git clone --branch 1.6 --depth 1 https://github.com/maththekid/ihatehg.git source
+          cat frontend-patch/patch00 frontend-patch/patch01 frontend-patch/patch02 > frontend.patch
+          cd source
+          patch -p2 < ../frontend.patch
+          chmod +x gradlew
+
+      - name: Build Forge mod
+        working-directory: source
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Show build output
+        if: always()
+        run: find source/build -maxdepth 3 -type f -print 2>/dev/null || true
+
+      - name: Upload compiled JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ihatehg-1.6-menu-modernizado
+          path: source/build/libs/*.jar
+          if-no-files-found: error
