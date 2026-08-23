@@ -1,0 +1,335 @@
++ 5, boxY + 5, boxSize - 10, boxSize - 10, Window.ACCENT_SOFT);
+         }
+ 
+-        renderer.drawOutline(x, y, preferredHeight, preferredHeight, 1.0f, hovered ? Window.SECONDARY_OUTLINE : Window.SECONDARY_FOREGROUND);
+-
+-        renderer.drawString(x + preferredHeight + preferredHeight / 4, y + renderer.getStringHeight(title) / 4, title, Window.FOREGROUND);
++        if (!title.isEmpty()) {
++            renderer.drawString(x + boxSize + preferredHeight / 3, y + renderer.getStringHeight(title) / 4 + 2, title, Window.FOREGROUND);
++        }
+     }
+ 
+     @Override
+@@ -69,7 +72,6 @@
+             updateHovered(x, y, offscreen);
+ 
+             if (hovered) {
+-
+                 boolean newVal = !selected;
+                 boolean change = true;
+ 
+@@ -93,7 +95,8 @@
+     public void setTitle(String title) {
+         this.title = title;
+ 
+-        setWidth(renderer.getStringWidth(title) + preferredHeight + preferredHeight / 4);
++        int boxSize = preferredHeight - 4;
++        setWidth(boxSize + (title.isEmpty() ? 0 : renderer.getStringWidth(title) + preferredHeight / 3));
+         setHeight(preferredHeight);
+     }
+ 
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ComboBox.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ComboBox.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ComboBox.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ComboBox.java	2026-08-23 14:20:12.000000000 +0000
+@@ -16,7 +16,7 @@
+ 
+ public class ComboBox extends AbstractComponent {
+     private static final int PREFERRED_WIDTH = 180;
+-    private static final int PREFERRED_HEIGHT = 22;
++    private static final int PREFERRED_HEIGHT = 26;
+ 
+     private int preferredWidth;
+     private int preferredHeight;
+@@ -27,7 +27,6 @@
+     private int selectedIndex;
+ 
+     private boolean opened;
+-    private int mouseX;
+     private int mouseY;
+ 
+     public ComboBox(IRenderer renderer, int preferredWidth, int preferredHeight, String[] values, int selectedIndex) {
+@@ -57,64 +56,39 @@
+         updateHeight();
+ 
+         renderer.drawRect(x, y, getWidth(), getHeight(), Window.TERTIARY_FOREGROUND);
++        renderer.drawOutline(x, y, getWidth(), getHeight(), 1.0f, opened || hovered ? Window.ACCENT : Window.SECONDARY_OUTLINE);
+ 
+-        if (hovered)
++        if (hovered) {
+             renderer.drawRect(x, y, getWidth(), preferredHeight, Window.SECONDARY_FOREGROUND);
+-        else if (hoveredExtended) {
+-            int offset = preferredHeight + 4;
+-
+-            for (int i = 0; i < values.length; i++) {
+-                if (i == selectedIndex)
+-                    continue;
++        }
+ 
+-                int height = preferredHeight;
++        renderer.drawRect(x, y, 3, preferredHeight, opened || hovered ? Window.ACCENT_HOVER : Window.SECONDARY_OUTLINE);
++        renderer.drawRect(x + getWidth() - preferredHeight, y, preferredHeight, preferredHeight, opened ? Window.ACCENT_SOFT : Window.SECONDARY_FOREGROUND);
+ 
+-                if ((selectedIndex == 0 ? i == 1 : i == 0)
+-                        || (selectedIndex == values.length - 1 ? i == values.length - 2
+-                        : i == values.length - 1))
+-                    height++;
+-
+-                if (mouseY >= getY() + offset
+-                        && mouseY <= getY() + offset + preferredHeight) {
+-                    renderer.drawRect(x, y + offset, getWidth(), preferredHeight, Window.SECONDARY_FOREGROUND);
+-                    break;
+-                }
+-                offset += height;
+-            }
++        double cx = x + getWidth() - preferredHeight / 2.0;
++        double cy = y + preferredHeight / 2.0;
++        if (opened) {
++            renderer.drawTriangle(cx - 5, cy + 3, cx + 5, cy + 3, cx, cy - 3, Window.FOREGROUND);
++        } else {
++            renderer.drawTriangle(cx - 5, cy - 3, cx + 5, cy - 3, cx, cy + 3, Window.MUTED_FOREGROUND);
+         }
+-        // Draw triangle background
+-        renderer.drawRect(x + getWidth() - preferredHeight, y, preferredHeight, getHeight(), (hovered || opened) ? Window.TERTIARY_FOREGROUND : Window.SECONDARY_FOREGROUND);
+-        // Draw triangle
+-//        renderer.drawTriangle(
+-//                x + getWidth() - getHeight() + getHeight() / 4.0, y + getHeight() / 4.0,
+-//                x + getWidth() - getHeight() + getHeight() / 2.0, y + getHeight() / 4.0 + getHeight() / 2.0,
+-//                x + getWidth() - getHeight() + getHeight() / 4.0, y + getHeight() / 4.0,
+-//                Window.FOREGROUND);
+-
+-        /*
+-        renderer.drawTriangle(
+-                x + getWidth() - preferredHeight + preferredHeight / 4.0, y + preferredHeight / 4.0,
+-                x + getWidth() - preferredHeight + preferredHeight / 2.0, y + preferredHeight * 3.0 / 4.0,
+-                x + getWidth() - preferredHeight + preferredHeight * 3.0 / 4.0, y + preferredHeight / 4.0,
+-                Window.FOREGROUND);
+-                */
+-
+-        renderer.drawOutline(x, y, getWidth(), getHeight(), 1.0f, (hovered && !opened) ? Window.SECONDARY_OUTLINE : Window.SECONDARY_FOREGROUND);
+ 
+         String text = values[selectedIndex];
+-
+-        renderer.drawString(x + 4, y + renderer.getStringHeight(text) / 4, text, Window.FOREGROUND);
+-
++        renderer.drawString(x + 10, y + renderer.getStringHeight(text) / 4 + 1, text, Window.FOREGROUND);
+ 
+         if (opened) {
+             int offset = preferredHeight + 4;
+ 
+             for (int i = 0; i < values.length; i++) {
+-                if (i == selectedIndex)
+-                    continue;
++                if (i == selectedIndex) continue;
+ 
+-                renderer.drawString(x + 4, y + offset, values[i], Window.FOREGROUND);
++                boolean optionHovered = hoveredExtended && mouseY >= y + offset && mouseY <= y + offset + preferredHeight;
++                if (optionHovered) {
++                    renderer.drawRect(x + 3, y + offset, getWidth() - 6, preferredHeight, Window.SECONDARY_FOREGROUND);
++                    renderer.drawRect(x + 3, y + offset, 3, preferredHeight, Window.ACCENT);
++                }
+ 
++                renderer.drawString(x + 10, y + offset + renderer.getStringHeight(values[i]) / 4, values[i], optionHovered ? Window.FOREGROUND : Window.MUTED_FOREGROUND);
+                 offset += preferredHeight;
+             }
+         }
+@@ -130,8 +104,6 @@
+     private void updateHovered(int x, int y, boolean offscreen) {
+         hovered = !offscreen && x >= this.x && y >= this.y && x <= this.x + getWidth() && y <= this.y + preferredHeight;
+         hoveredExtended = !offscreen && x >= this.x && y >= this.y && x <= this.x + getWidth() && y <= this.y + getHeight();
+-
+-        mouseX = x;
+         mouseY = y;
+     }
+ 
+@@ -139,24 +111,21 @@
+     public boolean mousePressed(int button, int x, int y, boolean offscreen) {
+         updateHovered(x, y, offscreen);
+ 
+-        if (button != 0)
+-            return false;
++        if (button != 0) return false;
+ 
+         if (hovered) {
+             setOpened(!opened);
+             updateHeight();
+             return true;
+         }
++
+         if (hoveredExtended && opened) {
+             int offset = this.y + preferredHeight + 4;
+ 
+             for (int i = 0; i < values.length; i++) {
+-                if (i == selectedIndex)
+-                    continue;
++                if (i == selectedIndex) continue;
+ 
+-                if (y >= offset
+-                        && y <= offset
+-                        + preferredHeight) {
++                if (y >= offset && y <= offset + preferredHeight) {
+                     setSelectedChecked(i);
+                     setOpened(false);
+                     break;
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Label.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Label.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Label.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Label.java	2026-08-23 14:20:13.000000000 +0000
+@@ -24,23 +24,7 @@
+ 
+     @Override
+     public void render() {
+-//        glClearDepthf(1.0f);
+-//        glClear(GL_DEPTH_BUFFER_BIT);
+-//        glColorMask(false, false, false, false);
+-//        glDepthFunc(GL_LESS);
+-//        glEnable(GL_DEPTH_TEST);
+-//        glDepthMask(true);
+-
+-//        renderer.drawRect(x, y, getWidth() / 1.5, getHeight(), Color.white);
+-
+-
+-//        glColorMask(true, true, true, true);
+-//        glDepthMask(true);
+-//        glDepthFunc(GL_EQUAL);
+-
+-        renderer.drawString(x, y, text, Window.FOREGROUND);
+-
+-//        glDisable(GL_DEPTH_TEST);
++        renderer.drawString(x, y + 2, text, Window.MUTED_FOREGROUND);
+     }
+ 
+     public String getText() {
+@@ -49,7 +33,7 @@
+ 
+     public void setText(String text) {
+         setWidth(renderer.getStringWidth(text));
+-        setHeight(renderer.getStringHeight(text));
++        setHeight(renderer.getStringHeight(text) + 4);
+ 
+         this.text = text;
+     }
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ScrollPane.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ScrollPane.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ScrollPane.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/ScrollPane.java	2026-08-23 14:20:13.000000000 +0000
+@@ -56,9 +56,12 @@
+ 
+         if (maxY > 0) {
+             int sliderHeight = (int) (getHeight() / (double) realHeight * (double) getHeight());
+-            int sliderWidth = 3;
++            int sliderWidth = 4;
++            int sliderX = x + getWidth() - sliderWidth - 3;
++            int sliderY = (int) (y + (getHeight() - sliderHeight) * (scrollOffset / (double) maxY));
+ 
+-            renderer.drawRect(x + getWidth() - sliderWidth, y + (getHeight() - sliderHeight) * (scrollOffset / (double) maxY), sliderWidth, sliderHeight, Window.SECONDARY_OUTLINE);
++            renderer.drawRect(sliderX, y + 4, sliderWidth, getHeight() - 8, Window.TERTIARY_FOREGROUND);
++            renderer.drawRect(sliderX, sliderY, sliderWidth, sliderHeight, Window.ACCENT);
+         }
+     }
+ 
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Slider.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Slider.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Slider.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Slider.java	2026-08-23 14:20:13.000000000 +0000
+@@ -20,7 +20,7 @@
+ 
+ public class Slider extends AbstractComponent {
+     private static final int PREFERRED_WIDTH = 180;
+-    private static final int PREFERRED_HEIGHT = 24;
++    private static final int PREFERRED_HEIGHT = 26;
+ 
+     private int preferredWidth;
+     private int preferredHeight;
+@@ -57,17 +57,23 @@
+     @Override
+     public void render() {
+         renderer.drawRect(x, y, getWidth(), getHeight(), (hovered || changing) ? Window.SECONDARY_FOREGROUND : Window.TERTIARY_FOREGROUND);
+-        renderer.drawOutline(x, y, getWidth(), getHeight(), 1.0f, (hovered || changing) ? Window.SECONDARY_OUTLINE : Window.SECONDARY_FOREGROUND);
++        renderer.drawOutline(x, y, getWidth(), getHeight(), 1.0f, (hovered || changing) ? Window.ACCENT : Window.SECONDARY_OUTLINE);
+ 
+-        int sliderWidth = 4;
+-
+-        double sliderPos = (value - minValue) / (maxValue - minValue) * (getWidth() - sliderWidth);
+-
+-        renderer.drawRect(x + sliderPos, y + 2, sliderWidth, getHeight() - 3, (hovered || changing) ? Window.TERTIARY_FOREGROUND : Window.SECONDARY_FOREGROUND);
++        int trackX = x + 10;
++        int trackY = y + getHeight() - 8;
++        int trackWidth = getWidth() - 20;
++        int trackHeight = 3;
++
++        double percent = maxValue == minValue ? 0.0 : (value - minValue) / (maxValue - minValue);
++        percent = Math.max(0.0, Math.min(1.0, percent));
++        int progressWidth = (int) (trackWidth * percent);
++
++        renderer.drawRect(trackX, trackY, trackWidth, trackHeight, Window.SECONDARY_OUTLINE);
++        renderer.drawRect(trackX, trackY, progressWidth, trackHeight, Window.ACCENT);
++        renderer.drawRect(trackX + Math.max(0, progressWidth - 2), trackY - 3, 5, 9, (hovered || changing) ? Window.ACCENT_HOVER : Window.ACCENT);
+ 
+         String text = numberType.getFormatter().apply(value);
+-
+-        renderer.drawString(x + getWidth() / 2 - renderer.getStringWidth(text) / 2, y + renderer.getStringHeight(text) / 4, text, Window.FOREGROUND);
++        renderer.drawString(x + 10, y + 4, text, Window.FOREGROUND);
+     }
+ 
+     @Override
+@@ -93,7 +99,6 @@
+                 value = newValue;
+             }
+         }
+-
+     }
+ 
+     private void updateHovered(int x, int y, boolean offscreen) {
+@@ -107,9 +112,7 @@
+ 
+             if (hovered) {
+                 changing = true;
+-
+                 updateValue(x, y);
+-
+                 return true;
+             }
+         }
+diff -ruN ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Spoiler.java ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Spoiler.java
+--- ihatehg_compare_original/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Spoiler.java	2026-02-11 00:41:40.000000000 +0000
++++ ihatehg_build/ihatehg-1.6/src/main/java/net/superblaubeere27/gui/components/Spoiler.java	2026-08-23 14:20:13.000000000 +0000
+@@ -15,7 +15,7 @@
+ import net.superblaubeere27.gui.Window;
+ 
+ public class Spoiler extends AbstractComponent {
+-    private static final int PREFERRED_HEIGHT = 28;
++    private static final int PREFERRED_HEIGHT = 32;
+     public int preferredWidth;
+     private String title;
+     private int preferredHeight;
+@@ -40,21 +40,32 @@
+ 
+     @Override
+     public void render() {
+-        if (hovered) renderer.drawRect(x, y, getWidth(), preferredHeight, Window.SECONDARY_FOREGROUND);
++        renderer.drawRect(x, y, getWidth(), preferredHeight, hovered ? Window.SECONDARY_FOREGROUND : Window.TERTIARY_FOREGROUND);
++        renderer.drawOutline(x, y, getWidth(), preferredHeight, 1.0f, hovered || opened ? Window.ACCENT : Window.SECONDARY_OUTLINE);
++        renderer.drawRect(x, y, 4, preferredHeight, opened ? Window.ACCENT_HOVER : (hovered ? Window.ACCENT : Window.SECONDARY_OUTLINE));
+ 
+-        renderer.drawOutline(x, y, getWidth(), preferredHeight, 1.0f, Window.SECONDARY_FOREGROUND);
++        renderer.drawString(x + 14, y + renderer.getStringHeight(title) / 4 + 3, title, hovered || opened ? Window.FOREGROUND : Window.MUTED_FOREGROUND);
+ 
+-        renderer.drawString(x + getWidth() / 2 - renderer.getStringWidth(title) / 2, y + renderer.getStringHeight(title) / 4, title, Window.FOREGROUND);
++        double cx = x + getWidth() - 18;
++        double cy = y + preferredHeight / 2.0;
++        if (opened) {
++            renderer.drawTriangle(cx - 5, cy + 3, cx + 5, cy + 3, cx, cy - 3, Window.ACCENT_HOVER);
++        } else {
++            renderer.drawTriangle(cx - 5, cy - 3, cx + 5, cy - 3, cx, cy + 3, Window.MUTED_FOREGROUND);
++        }
+ 
+         if (opened) {
+             updateBounds();
+ 
++            renderer.drawRect(x, y + preferredHeight, getWidth(), getHeight() - preferredHeight, new java.awt.Color(20, 22, 31, 245));
++
+             contentPane.setX(getX());
+             contentPane.setY(getY() + preferredHeight);
+-
++            contentPane.setWidth(getWidth());
+             contentPane.render();
+ 
+-            renderer.drawOutline(x, y, getWidth(), getHeight(), 1.0f, Window.SECONDARY_FOREGROUND);
++            renderer.drawOutline(x, y, getWidth
