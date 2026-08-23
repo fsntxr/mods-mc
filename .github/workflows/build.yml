@@ -6,6 +6,10 @@ on:
     paths:
       - '.github/workflows/build.yml'
       - 'frontend-patch/**'
+  pull_request:
+    paths:
+      - '.github/workflows/build.yml'
+      - 'frontend-patch/**'
 
 jobs:
   build:
